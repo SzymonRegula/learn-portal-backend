@@ -15,9 +15,16 @@ const schema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).max(30).required(),
   photo: Joi.string().uri(),
+  role: Joi.string().valid("student", "trainer").required(),
+  specializationId: Joi.string().uuid().when("role", {
+    is: "trainer",
+    then: Joi.required(),
+  }),
+  dateOfBirth: Joi.string().isoDate(),
+  address: Joi.string().max(255),
 });
 
-module.exports.register = async (event) => {
+module.exports.handler = async (event) => {
   try {
     const data = JSON.parse(event.body);
 
@@ -41,29 +48,87 @@ module.exports.register = async (event) => {
       return response(400, { message: "Email already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const userId = uuidv4();
 
-    const params = {
-      TableName: process.env.USERS_TABLE,
-      Item: {
-        id: uuidv4(),
-        firstName: data.firstName,
-        lastName: data.lastName,
-        username: data.username,
-        email: data.email,
-        photo: data.photo || "",
-        password: hashedPassword,
-        isActive: true,
-      },
-    };
+    if (data.role === "student") {
+      await addStudent(userId, data.dateOfBirth, data.address);
+    }
 
-    await dynamoDb.put(params).promise();
+    if (data.role === "trainer") {
+      const error = await tryAddTrainer(userId, data.specializationId);
+      if (error) {
+        return error;
+      }
+    }
+
+    await addUser(userId, data);
 
     return response(201, { message: "User registered successfully" });
   } catch (error) {
     console.error(error);
     return response(500, { message: "Couldn't register the user." });
   }
+};
+
+const addStudent = async (userId, dateOfBirth, address) => {
+  const studentParams = {
+    TableName: process.env.STUDENTS_TABLE,
+    Item: {
+      id: uuidv4(),
+      userId,
+      dateOfBirth: dateOfBirth || "",
+      address: address || "",
+    },
+  };
+
+  await dynamoDb.put(studentParams).promise();
+};
+
+const tryAddTrainer = async (userId, specializationId) => {
+  const specializationParams = {
+    TableName: process.env.SPECIALIZATIONS_TABLE,
+    Key: { id: specializationId },
+  };
+
+  const specializationResult = await dynamoDb
+    .get(specializationParams)
+    .promise();
+
+  if (!specializationResult.Item) {
+    return response(400, { message: "Specialization not found" });
+  }
+
+  const trainerParams = {
+    TableName: process.env.TRAINERS_TABLE,
+    Item: {
+      id: uuidv4(),
+      userId,
+      specializationId,
+    },
+  };
+
+  await dynamoDb.put(trainerParams).promise();
+};
+
+const addUser = async (userId, data) => {
+  const hashedPassword = await bcrypt.hash(data.password, 10);
+
+  const userParams = {
+    TableName: process.env.USERS_TABLE,
+    Item: {
+      id: userId,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      username: data.username,
+      email: data.email,
+      password: hashedPassword,
+      role: data.role,
+      isActive: true,
+      photo: data.photo || "",
+    },
+  };
+
+  await dynamoDb.put(userParams).promise();
 };
 
 const checkIfUsernameExists = async (username) => {
