@@ -135,6 +135,15 @@ functions:
           authorizer:
             name: userAuthorizer
 
+  uploadPhoto:
+    handler: user/uploadPhoto.handler
+    events:
+      - httpApi:
+          path: /users/upload-photo
+          method: post
+          authorizer:
+            name: userAuthorizer
+
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details

@@ -1,4 +1,4 @@
-import { response, getItemByUserId } from "../helpers/index.js";
+import { response, getItemByUserId, getUserItem } from "../helpers/index.js";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 
@@ -9,18 +9,12 @@ export const handler = async (event) => {
   try {
     const { userId } = event.requestContext.authorizer.lambda;
 
-    const params = {
-      TableName: process.env.USERS_TABLE,
-      Key: { id: userId },
-    };
+    let user = await getUserItem(userId);
 
-    const userResponse = await dynamoDb.get(params);
-
-    if (!userResponse.Item) {
+    if (!user) {
       return response(404, { message: "User not found" });
     }
 
-    let user = userResponse.Item;
     delete user.password;
 
     if (user.role === "student") {
