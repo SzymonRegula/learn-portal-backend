@@ -14,45 +14,52 @@ const schema = Joi.object({
 });
 
 export const handler = async (event) => {
-  const data = JSON.parse(event.body);
+  try {
+    const data = JSON.parse(event.body);
 
-  const { error } = schema.validate(data);
+    const { error } = schema.validate(data);
 
-  if (error) {
+    if (error) {
+      console.error(error);
+      return response(401, { message: "Invalid login credentials" });
+    }
+
+    const params = {
+      TableName: process.env.USERS_TABLE,
+      IndexName: "EmailIndex",
+      KeyConditionExpression: "email = :email",
+      ExpressionAttributeValues: {
+        ":email": data.email,
+      },
+    };
+
+    const users = await dynamoDb.query(params);
+
+    if (users.Count === 0) {
+      return response(401, { message: "Invalid login credentials" });
+    }
+
+    const user = users.Items[0];
+
+    const passwordMatch = await bcrypt.compare(data.password, user.password);
+
+    if (!passwordMatch) {
+      return response(401, { message: "Invalid login credentials" });
+    }
+
+    const payload = {
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    return response(200, { token, message: "Login successful" });
+  } catch (error) {
     console.error(error);
-    return response(401, { message: "Invalid login credentials" });
+    return response(500, { message: "Couldn't login the user." });
   }
-
-  const params = {
-    TableName: process.env.USERS_TABLE,
-    IndexName: "EmailIndex",
-    KeyConditionExpression: "email = :email",
-    ExpressionAttributeValues: {
-      ":email": data.email,
-    },
-  };
-
-  const users = await dynamoDb.query(params);
-
-  if (users.Count === 0) {
-    return response(401, { message: "Invalid login credentials" });
-  }
-
-  const user = users.Items[0];
-
-  const passwordMatch = await bcrypt.compare(data.password, user.password);
-
-  if (!passwordMatch) {
-    return response(401, { message: "Invalid login credentials" });
-  }
-
-  const payload = {
-    userId: user.id,
-    username: user.username,
-    role: user.role,
-  };
-
-  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-  return response(200, { token, message: "Login successful" });
 };

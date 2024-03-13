@@ -15,7 +15,7 @@ const getItemByUserId = async (userId, tableName) => {
   };
 
   const response = await dynamoDb.query(params);
-  return response.Items[0];
+  return response?.Items[0];
 };
 
 export default getItemByUserId;
