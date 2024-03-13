@@ -24,14 +24,27 @@ provider:
   name: aws
   runtime: nodejs18.x
   lambdaHashingVersion: "20201221"
+
   environment:
     JWT_SECRET: ${ssm:/aws/reference/secretsmanager/learn-portal/jwt-secret}
     USERS_TABLE: Users-${sls:stage}
     STUDENTS_TABLE: Students-${sls:stage}
     TRAINERS_TABLE: Trainers-${sls:stage}
     SPECIALIZATIONS_TABLE: Specializations-${sls:stage}
+
   httpApi:
     cors: true
+    authorizers:
+      userAuthorizer:
+        type: request
+        functionName: userAuthorizer
+      # studentAuthorizer:
+      #   type: request
+      #   functionName: studentAuthorizer
+      # trainerAuthorizer:
+      #   type: request
+      #   functionName: trainerAuthorizer
+
   iam:
     role:
       statements:
@@ -83,18 +96,45 @@ package:
 #    - include-me-dir/**
 
 functions:
+  userAuthorizer:
+    handler: auth/authorizers.userAuthorizer
+  # studentAuthorizer:
+  #   handler: auth/authorizers.studentAuthorizer
+  # trainerAuthorizer:
+  #   handler: auth/authorizers.trainerAuthorizer
+
   register:
     handler: auth/register.handler
     events:
       - httpApi:
           path: /auth/register
           method: post
+
   login:
     handler: auth/login.handler
     events:
       - httpApi:
           path: /auth/login
           method: post
+
+  getMe:
+    handler: user/getMe.handler
+    events:
+      - httpApi:
+          path: /users/me
+          method: get
+          authorizer:
+            name: userAuthorizer
+
+  deleteMe:
+    handler: user/deleteMe.handler
+    events:
+      - httpApi:
+          path: /users/me
+          method: delete
+          authorizer:
+            name: userAuthorizer
+
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
