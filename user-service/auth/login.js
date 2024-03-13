@@ -1,19 +1,19 @@
-"use strict";
+import bcrypt from "bcryptjs";
+import Joi from "joi";
+import jwt from "jsonwebtoken";
+import { response } from "../helpers/index.js";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 
-const bcrypt = require("bcryptjs");
-const Joi = require("joi");
-const AWS = require("aws-sdk");
-const jwt = require("jsonwebtoken");
-const { response } = require("../helpers/response");
-
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const client = new DynamoDBClient();
+const dynamoDb = DynamoDBDocument.from(client);
 
 const schema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).max(30).required(),
 });
 
-module.exports.handler = async (event) => {
+export const handler = async (event) => {
   const data = JSON.parse(event.body);
 
   const { error } = schema.validate(data);
@@ -32,7 +32,7 @@ module.exports.handler = async (event) => {
     },
   };
 
-  const users = await dynamoDb.query(params).promise();
+  const users = await dynamoDb.query(params);
 
   if (users.Count === 0) {
     return response(401, { message: "Invalid login credentials" });

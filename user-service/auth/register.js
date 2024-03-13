@@ -1,12 +1,12 @@
-"use strict";
+import { v4 as uuidv4 } from "uuid";
+import bcrypt from "bcryptjs";
+import Joi from "joi";
+import { response } from "../helpers/index.js";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 
-const { v4: uuidv4 } = require("uuid");
-const bcrypt = require("bcryptjs");
-const Joi = require("joi");
-const AWS = require("aws-sdk");
-const { response } = require("../helpers/response");
-
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const client = new DynamoDBClient();
+const dynamoDb = DynamoDBDocument.from(client);
 
 const schema = Joi.object({
   firstName: Joi.string().min(2).max(30).required(),
@@ -24,7 +24,7 @@ const schema = Joi.object({
   address: Joi.string().max(255),
 });
 
-module.exports.handler = async (event) => {
+export const handler = async (event) => {
   try {
     const data = JSON.parse(event.body);
 
@@ -81,7 +81,7 @@ const addStudent = async (userId, dateOfBirth, address) => {
     },
   };
 
-  await dynamoDb.put(studentParams).promise();
+  await dynamoDb.put(studentParams);
 };
 
 const tryAddTrainer = async (userId, specializationId) => {
@@ -90,9 +90,7 @@ const tryAddTrainer = async (userId, specializationId) => {
     Key: { id: specializationId },
   };
 
-  const specializationResult = await dynamoDb
-    .get(specializationParams)
-    .promise();
+  const specializationResult = await dynamoDb.get(specializationParams);
 
   if (!specializationResult.Item) {
     return response(400, { message: "Specialization not found" });
@@ -107,7 +105,7 @@ const tryAddTrainer = async (userId, specializationId) => {
     },
   };
 
-  await dynamoDb.put(trainerParams).promise();
+  await dynamoDb.put(trainerParams);
 };
 
 const addUser = async (userId, data) => {
@@ -128,7 +126,7 @@ const addUser = async (userId, data) => {
     },
   };
 
-  await dynamoDb.put(userParams).promise();
+  await dynamoDb.put(userParams);
 };
 
 const checkIfUsernameExists = async (username) => {
@@ -141,7 +139,7 @@ const checkIfUsernameExists = async (username) => {
     },
   };
 
-  const usernameResult = await dynamoDb.query(usernameParams).promise();
+  const usernameResult = await dynamoDb.query(usernameParams);
 
   if (usernameResult.Items && usernameResult.Items.length > 0) {
     return true;
@@ -159,7 +157,7 @@ const checkIfEmailExists = async (email) => {
     },
   };
 
-  const emailResult = await dynamoDb.query(emailParams).promise();
+  const emailResult = await dynamoDb.query(emailParams);
 
   if (emailResult.Items && emailResult.Items.length > 0) {
     return true;

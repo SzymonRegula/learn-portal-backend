@@ -1,4 +1,4 @@
-module.exports.response = (statusCode, body) => {
+const response = (statusCode, body) => {
   const response = {
     statusCode,
     headers: {
@@ -14,3 +14,5 @@ module.exports.response = (statusCode, body) => {
 
   return response;
 };
+
+export default response;
