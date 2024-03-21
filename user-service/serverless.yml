@@ -40,9 +40,9 @@ provider:
       studentAuthorizer:
         type: request
         functionName: studentAuthorizer
-      # trainerAuthorizer:
-      #   type: request
-      #   functionName: trainerAuthorizer
+      trainerAuthorizer:
+        type: request
+        functionName: trainerAuthorizer
 
   iam:
     role:
@@ -55,6 +55,7 @@ provider:
             - dynamodb:PutItem
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
           Resource:
             - "arn:aws:dynamodb:${aws:region}:*:table/*"
 
@@ -99,8 +100,8 @@ functions:
     handler: auth/authorizers.userAuthorizer
   studentAuthorizer:
     handler: auth/authorizers.studentAuthorizer
-  # trainerAuthorizer:
-  #   handler: auth/authorizers.trainerAuthorizer
+  trainerAuthorizer:
+    handler: auth/authorizers.trainerAuthorizer
 
   register:
     handler: auth/register.handler
@@ -152,7 +153,7 @@ functions:
           authorizer:
             name: userAuthorizer
 
-  getAllTrainers:
+  getActiveTrainers:
     handler: user/getActiveTrainers.handler
     events:
       - httpApi:
@@ -169,6 +170,15 @@ functions:
           method: post
           authorizer:
             name: studentAuthorizer
+
+  getMyStudents:
+    handler: user/getMyStudents.handler
+    events:
+      - httpApi:
+          path: /users/students
+          method: get
+          authorizer:
+            name: trainerAuthorizer
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
