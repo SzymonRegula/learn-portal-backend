@@ -31,7 +31,7 @@ export const handler = async (event) => {
       specialization: trainer.specialization,
     }));
 
-    return response(200, { trainers: responseData, message: "Trainers found" });
+    return response(200, { trainers: responseData });
   } catch (error) {
     console.error(error);
     return response(500, { message: "Couldn't get the trainers" });

@@ -57,7 +57,7 @@ export const handler = async (event) => {
       expiresIn: "1h",
     });
 
-    return response(200, { token, message: "Login successful" });
+    return response(200, { token });
   } catch (error) {
     console.error(error);
     return response(500, { message: "Couldn't login the user" });

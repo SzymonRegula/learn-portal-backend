@@ -48,7 +48,7 @@ export const handler = async (event) => {
       isActive: student.isActive,
     }));
 
-    return response(200, { students: responseData, message: "Students found" });
+    return response(200, { students: responseData });
   } catch (error) {
     console.error(error);
     return response(500, { message: "Couldn't get the students" });
