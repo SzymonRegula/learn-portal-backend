@@ -13,15 +13,25 @@ export const handler = async (event) => {
 
     const trainersResponse = await dynamoDb.scan(params);
 
-    if (!trainersResponse?.Items) {
-      return response(404, { message: "Trainers not found" });
-    }
-
     const activeTrainers = trainersResponse.Items.filter(
       (trainer) => trainer.isActive
     );
 
-    return response(200, { activeTrainers, message: "Trainers found" });
+    if (activeTrainers.length === 0) {
+      return response(404, {
+        activeTrainers,
+        message: "There are no active trainers",
+      });
+    }
+
+    const responseData = activeTrainers.map((trainer) => ({
+      id: trainer.id,
+      firstName: trainer.firstName,
+      lastName: trainer.lastName,
+      specialization: trainer.specialization,
+    }));
+
+    return response(200, { trainers: responseData, message: "Trainers found" });
   } catch (error) {
     console.error(error);
     return response(500, { message: "Couldn't get the trainers" });
