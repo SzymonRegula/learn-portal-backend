@@ -41,7 +41,7 @@ export const handler = async (event) => {
     return response(200, { message: "Account deleted successfully" });
   } catch (error) {
     console.error(error);
-    return response(500, { message: "Couldn't delete the user." });
+    return response(500, { message: "Couldn't delete the user" });
   }
 };
 

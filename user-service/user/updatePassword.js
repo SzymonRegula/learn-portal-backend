@@ -56,6 +56,6 @@ export const handler = async (event) => {
     return response(200, { message: "Password updated successfully" });
   } catch (error) {
     console.error(error);
-    return response(500, { message: "Couldn't update the password." });
+    return response(500, { message: "Couldn't update the password" });
   }
 };

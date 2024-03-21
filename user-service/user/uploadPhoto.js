@@ -43,6 +43,6 @@ export const handler = async (event) => {
     return response(200, { message: "Photo updated successfully" });
   } catch (error) {
     console.error(error);
-    return response(500, { message: "Couldn't update the photo." });
+    return response(500, { message: "Couldn't update the photo" });
   }
 };

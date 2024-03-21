@@ -23,7 +23,6 @@ frameworkVersion: "3"
 provider:
   name: aws
   runtime: nodejs18.x
-  lambdaHashingVersion: "20201221"
 
   environment:
     JWT_SECRET: ${ssm:/aws/reference/secretsmanager/learn-portal/jwt-secret}
@@ -38,9 +37,9 @@ provider:
       userAuthorizer:
         type: request
         functionName: userAuthorizer
-      # studentAuthorizer:
-      #   type: request
-      #   functionName: studentAuthorizer
+      studentAuthorizer:
+        type: request
+        functionName: studentAuthorizer
       # trainerAuthorizer:
       #   type: request
       #   functionName: trainerAuthorizer
@@ -98,8 +97,8 @@ package:
 functions:
   userAuthorizer:
     handler: auth/authorizers.userAuthorizer
-  # studentAuthorizer:
-  #   handler: auth/authorizers.studentAuthorizer
+  studentAuthorizer:
+    handler: auth/authorizers.studentAuthorizer
   # trainerAuthorizer:
   #   handler: auth/authorizers.trainerAuthorizer
 
@@ -153,6 +152,15 @@ functions:
           authorizer:
             name: userAuthorizer
 
+  getAllTrainers:
+    handler: user/getActiveTrainers.handler
+    events:
+      - httpApi:
+          path: /users/active-trainers
+          method: get
+          authorizer:
+            name: studentAuthorizer
+
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
@@ -203,71 +211,71 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
-          - AttributeName: "username"
-            AttributeType: "S"
-          - AttributeName: "email"
-            AttributeType: "S"
+          - AttributeName: username
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
         GlobalSecondaryIndexes:
-          - IndexName: "UsernameIndex"
+          - IndexName: UsernameIndex
             KeySchema:
-              - AttributeName: "username"
-                KeyType: "HASH"
+              - AttributeName: username
+                KeyType: HASH
             Projection:
-              ProjectionType: "ALL"
-          - IndexName: "EmailIndex"
+              ProjectionType: ALL
+          - IndexName: EmailIndex
             KeySchema:
-              - AttributeName: "email"
-                KeyType: "HASH"
+              - AttributeName: email
+                KeyType: HASH
             Projection:
-              ProjectionType: "ALL"
+              ProjectionType: ALL
 
     StudentsTable:
-      Type: "AWS::DynamoDB::Table"
+      Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:provider.environment.STUDENTS_TABLE}
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
-          - AttributeName: "userId"
-            AttributeType: "S"
+          - AttributeName: userId
+            AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
         GlobalSecondaryIndexes:
-          - IndexName: "UserIdIndex"
+          - IndexName: UserIdIndex
             KeySchema:
-              - AttributeName: "userId"
-                KeyType: "HASH"
+              - AttributeName: userId
+                KeyType: HASH
             Projection:
-              ProjectionType: "ALL"
+              ProjectionType: ALL
 
     TrainersTable:
-      Type: "AWS::DynamoDB::Table"
+      Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:provider.environment.TRAINERS_TABLE}
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
-          - AttributeName: "userId"
-            AttributeType: "S"
+          - AttributeName: userId
+            AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
         GlobalSecondaryIndexes:
-          - IndexName: "UserIdIndex"
+          - IndexName: UserIdIndex
             KeySchema:
-              - AttributeName: "userId"
-                KeyType: "HASH"
+              - AttributeName: userId
+                KeyType: HASH
             Projection:
-              ProjectionType: "ALL"
+              ProjectionType: ALL
 
     SpecializationsTable:
-      Type: "AWS::DynamoDB::Table"
+      Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:provider.environment.SPECIALIZATIONS_TABLE}
         BillingMode: PAY_PER_REQUEST

@@ -60,6 +60,6 @@ export const handler = async (event) => {
     return response(200, { token, message: "Login successful" });
   } catch (error) {
     console.error(error);
-    return response(500, { message: "Couldn't login the user." });
+    return response(500, { message: "Couldn't login the user" });
   }
 };

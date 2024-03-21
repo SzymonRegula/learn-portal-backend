@@ -1,44 +1,52 @@
 import { response, getItemByUserId, getUserItem } from "../helpers/index.js";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
-
-const client = new DynamoDBClient();
-const dynamoDb = DynamoDBDocument.from(client);
 
 export const handler = async (event) => {
   try {
-    const { userId } = event.requestContext.authorizer.lambda;
+    const { userId, role } = event.requestContext.authorizer.lambda;
 
-    let user = await getUserItem(userId);
+    let responseData;
 
-    if (!user) {
-      return response(404, { message: "User not found" });
-    }
+    if (role === "student") {
+      const [user, student] = await Promise.all([
+        getUserItem(userId),
+        getItemByUserId(userId, process.env.STUDENTS_TABLE),
+      ]);
 
-    delete user.password;
+      if (!user) {
+        return response(404, { message: "User not found" });
+      }
 
-    if (user.role === "student") {
-      const student = await getItemByUserId(userId, process.env.STUDENTS_TABLE);
-
-      user = {
+      responseData = {
         ...user,
+        password: undefined,
         address: student.address,
         dateOfBirth: student.dateOfBirth,
+        trainerIds: student.trainerIds,
       };
     }
 
-    if (user.role === "trainer") {
-      const trainer = await getItemByUserId(userId, process.env.TRAINERS_TABLE);
+    if (role === "trainer") {
+      const [user, trainer] = await Promise.all([
+        getUserItem(userId),
+        getItemByUserId(userId, process.env.TRAINERS_TABLE),
+      ]);
 
-      user = {
+      if (!user) {
+        return response(404, { message: "User not found" });
+      }
+
+      responseData = {
         ...user,
+        password: undefined,
         specializationId: trainer.specializationId,
+        specialization: trainer.specialization,
+        studentIds: trainer.studentIds,
       };
     }
 
-    return response(200, { user, message: "User found" });
+    return response(200, { responseData, message: "User found" });
   } catch (error) {
     console.error(error);
-    return response(500, { message: "Couldn't get the user." });
+    return response(500, { message: "Couldn't get the user" });
   }
 };

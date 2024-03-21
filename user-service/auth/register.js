@@ -48,51 +48,55 @@ export const handler = async (event) => {
       return response(400, { message: "Email already exists" });
     }
 
-    const userId = uuidv4();
+    data.userId = uuidv4();
 
     if (data.role === "student") {
-      await addStudent(userId, data.dateOfBirth, data.address);
+      await addStudent(data);
     }
 
     if (data.role === "trainer") {
-      const error = await tryAddTrainer(userId, data.specializationId);
-      if (error) {
-        return error;
+      const responseIfSpecializationNotFound = await tryAddTrainer(data);
+      if (responseIfSpecializationNotFound) {
+        return responseIfSpecializationNotFound;
       }
     }
 
-    await addUser(userId, data);
+    await addUser(data);
 
     return response(201, { message: "User registered successfully" });
   } catch (error) {
     console.error(error);
-    return response(500, { message: "Couldn't register the user." });
+    return response(500, { message: "Couldn't register the user" });
   }
 };
 
-const addStudent = async (userId, dateOfBirth, address) => {
+const addStudent = async (data) => {
   const studentParams = {
     TableName: process.env.STUDENTS_TABLE,
     Item: {
       id: uuidv4(),
-      userId,
-      dateOfBirth: dateOfBirth || "",
-      address: address || "",
+      userId: data.userId,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      isActive: true,
+      dateOfBirth: data.dateOfBirth || "",
+      address: data.address || "",
+      trainerIds: [],
     },
   };
 
   await dynamoDb.put(studentParams);
 };
 
-const tryAddTrainer = async (userId, specializationId) => {
+const tryAddTrainer = async (data) => {
   const specializationParams = {
     TableName: process.env.SPECIALIZATIONS_TABLE,
-    Key: { id: specializationId },
+    Key: { id: data.specializationId },
   };
 
-  const specializationResult = await dynamoDb.get(specializationParams);
+  const specializationResponse = await dynamoDb.get(specializationParams);
 
-  if (!specializationResult.Item) {
+  if (!specializationResponse?.Item) {
     return response(400, { message: "Specialization not found" });
   }
 
@@ -100,21 +104,26 @@ const tryAddTrainer = async (userId, specializationId) => {
     TableName: process.env.TRAINERS_TABLE,
     Item: {
       id: uuidv4(),
-      userId,
-      specializationId,
+      userId: data.userId,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      specializationId: data.specializationId,
+      specialization: specializationResponse.Item.specialization,
+      isActive: true,
+      studentIds: [],
     },
   };
 
   await dynamoDb.put(trainerParams);
 };
 
-const addUser = async (userId, data) => {
+const addUser = async (data) => {
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
   const userParams = {
     TableName: process.env.USERS_TABLE,
     Item: {
-      id: userId,
+      id: data.userId,
       firstName: data.firstName,
       lastName: data.lastName,
       username: data.username,
