@@ -9,9 +9,10 @@ const client = new DynamoDBClient();
 const dynamoDb = DynamoDBDocument.from(client);
 
 const schema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email(),
+  username: Joi.string().min(3).max(30),
   password: Joi.string().min(6).max(30).required(),
-});
+}).or("email", "username");
 
 export const handler = async (event) => {
   try {
@@ -26,12 +27,17 @@ export const handler = async (event) => {
 
     const params = {
       TableName: process.env.USERS_TABLE,
-      IndexName: "EmailIndex",
-      KeyConditionExpression: "email = :email",
-      ExpressionAttributeValues: {
-        ":email": data.email,
-      },
     };
+
+    if (data.email) {
+      params.IndexName = "EmailIndex";
+      params.KeyConditionExpression = "email = :email";
+      params.ExpressionAttributeValues = { ":email": data.email };
+    } else if (data.username) {
+      params.IndexName = "UsernameIndex";
+      params.KeyConditionExpression = "username = :username";
+      params.ExpressionAttributeValues = { ":username": data.username };
+    }
 
     const users = await dynamoDb.query(params);
 
