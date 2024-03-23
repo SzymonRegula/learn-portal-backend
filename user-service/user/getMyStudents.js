@@ -1,4 +1,4 @@
-import { getItemByUserId, getUserItem, response } from "../helpers/index.js";
+import { getItemByUserId, response } from "../helpers/index.js";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 
@@ -16,8 +16,6 @@ export const handler = async (event) => {
     }
 
     const { studentIds } = trainer;
-
-    console.log("ids: ", studentIds);
 
     if (studentIds.length === 0) {
       return response(404, { students: [], message: "There are no students" });

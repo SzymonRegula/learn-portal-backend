@@ -135,6 +135,15 @@ functions:
           authorizer:
             name: userAuthorizer
 
+  updateMe:
+    handler: user/updateMe.handler
+    events:
+      - httpApi:
+          path: /users/me
+          method: patch
+          authorizer:
+            name: userAuthorizer
+
   uploadPhoto:
     handler: user/uploadPhoto.handler
     events:
@@ -157,7 +166,7 @@ functions:
     handler: user/getActiveTrainers.handler
     events:
       - httpApi:
-          path: /users/active-trainers
+          path: /users/trainers
           method: get
           authorizer:
             name: studentAuthorizer

@@ -1,7 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import Joi from "joi";
-import { response } from "../helpers/index.js";
+import {
+  response,
+  checkIfEmailExists,
+  checkIfUsernameExists,
+  getSpecializationItem,
+} from "../helpers/index.js";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 
@@ -89,14 +94,9 @@ const addStudent = async (data) => {
 };
 
 const tryAddTrainer = async (data) => {
-  const specializationParams = {
-    TableName: process.env.SPECIALIZATIONS_TABLE,
-    Key: { id: data.specializationId },
-  };
+  const specialization = await getSpecializationItem(data.specializationId);
 
-  const specializationResponse = await dynamoDb.get(specializationParams);
-
-  if (!specializationResponse?.Item) {
+  if (!specialization) {
     return response(400, { message: "Specialization not found" });
   }
 
@@ -108,7 +108,7 @@ const tryAddTrainer = async (data) => {
       firstName: data.firstName,
       lastName: data.lastName,
       specializationId: data.specializationId,
-      specialization: specializationResponse.Item.specialization,
+      specialization: specialization.specialization,
       isActive: true,
       studentIds: [],
     },
@@ -136,40 +136,4 @@ const addUser = async (data) => {
   };
 
   await dynamoDb.put(userParams);
-};
-
-const checkIfUsernameExists = async (username) => {
-  const usernameParams = {
-    TableName: process.env.USERS_TABLE,
-    IndexName: "UsernameIndex",
-    KeyConditionExpression: "username = :username",
-    ExpressionAttributeValues: {
-      ":username": username,
-    },
-  };
-
-  const usernameResult = await dynamoDb.query(usernameParams);
-
-  if (usernameResult.Items && usernameResult.Items.length > 0) {
-    return true;
-  }
-  return false;
-};
-
-const checkIfEmailExists = async (email) => {
-  const emailParams = {
-    TableName: process.env.USERS_TABLE,
-    IndexName: "EmailIndex",
-    KeyConditionExpression: "email = :email",
-    ExpressionAttributeValues: {
-      ":email": email,
-    },
-  };
-
-  const emailResult = await dynamoDb.query(emailParams);
-
-  if (emailResult.Items && emailResult.Items.length > 0) {
-    return true;
-  }
-  return false;
 };

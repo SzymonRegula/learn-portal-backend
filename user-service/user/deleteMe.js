@@ -24,7 +24,6 @@ export const handler = async (event) => {
 
     if (role === "student") {
       const student = await getItemByUserId(userId, process.env.STUDENTS_TABLE);
-      console.log(student);
       if (student) {
         await deleteItem(student.id, process.env.STUDENTS_TABLE);
       }
@@ -32,7 +31,6 @@ export const handler = async (event) => {
 
     if (role === "trainer") {
       const trainer = await getItemByUserId(userId, process.env.TRAINERS_TABLE);
-      console.log(trainer);
       if (trainer) {
         await deleteItem(trainer.id, process.env.TRAINERS_TABLE);
       }
