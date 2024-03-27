@@ -22,7 +22,7 @@ export const handler = async (event) => {
       });
     }
 
-    return response(200, { specializations });
+    return response(200, specializations);
   } catch (error) {
     console.error(error);
     return response(500, { message: "Couldn't get the trainers" });

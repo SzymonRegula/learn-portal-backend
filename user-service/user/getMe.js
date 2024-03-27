@@ -44,7 +44,7 @@ export const handler = async (event) => {
       };
     }
 
-    return response(200, { data: responseData });
+    return response(200, responseData);
   } catch (error) {
     console.error(error);
     return response(500, { message: "Couldn't get the user" });

@@ -57,13 +57,15 @@ export const handler = async (event) => {
       userId: user.id,
       username: user.username,
       role: user.role,
+      photo: user.photo,
+      email: user.email,
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
 
-    return response(200, { token });
+    return response(200, token);
   } catch (error) {
     console.error(error);
     return response(500, { message: "Couldn't login the user" });
