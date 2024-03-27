@@ -195,8 +195,6 @@ functions:
       - httpApi:
           path: /users/trainers/specializations
           method: get
-          authorizer:
-            name: trainerAuthorizer
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
