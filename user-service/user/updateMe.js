@@ -21,8 +21,8 @@ const commonSchema = Joi.object({
 });
 
 const studentSchema = commonSchema.keys({
-  address: Joi.string().max(255),
-  dateOfBirth: Joi.string().isoDate(),
+  address: Joi.string().max(255).allow(""),
+  dateOfBirth: Joi.string().isoDate().allow(""),
 });
 
 const trainerSchema = commonSchema.keys({
@@ -105,7 +105,7 @@ export const handler = async (event) => {
       ...updateRoleResponse?.Attributes,
     };
 
-    return response(200, { updatedData });
+    return response(200, updatedData);
   } catch (error) {
     console.error(error);
     return response(500, { message: "Couldn't update the data" });
