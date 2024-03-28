@@ -25,8 +25,8 @@ const schema = Joi.object({
     is: "trainer",
     then: Joi.required(),
   }),
-  dateOfBirth: Joi.string().isoDate(),
-  address: Joi.string().max(255),
+  dateOfBirth: Joi.string().isoDate().allow(""),
+  address: Joi.string().max(255).allow(""),
 });
 
 export const handler = async (event) => {
