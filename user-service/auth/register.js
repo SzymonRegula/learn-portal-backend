@@ -54,6 +54,7 @@ export const handler = async (event) => {
     }
 
     data.userId = uuidv4();
+    data.roleId = uuidv4();
 
     if (data.role === "student") {
       await addStudent(data);
@@ -79,7 +80,7 @@ const addStudent = async (data) => {
   const studentParams = {
     TableName: process.env.STUDENTS_TABLE,
     Item: {
-      id: uuidv4(),
+      id: data.roleId,
       userId: data.userId,
       firstName: data.firstName,
       lastName: data.lastName,
@@ -103,7 +104,7 @@ const tryAddTrainer = async (data) => {
   const trainerParams = {
     TableName: process.env.TRAINERS_TABLE,
     Item: {
-      id: uuidv4(),
+      id: data.roleId,
       userId: data.userId,
       firstName: data.firstName,
       lastName: data.lastName,
@@ -124,6 +125,7 @@ const addUser = async (data) => {
     TableName: process.env.USERS_TABLE,
     Item: {
       id: data.userId,
+      roleId: data.roleId,
       firstName: data.firstName,
       lastName: data.lastName,
       username: data.username,
