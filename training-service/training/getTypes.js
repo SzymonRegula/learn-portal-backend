@@ -17,7 +17,6 @@ export const handler = async (event) => {
 
     if (types.length === 0) {
       return response(404, {
-        types: [],
         message: "There are no types",
       });
     }

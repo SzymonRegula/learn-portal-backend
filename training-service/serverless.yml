@@ -26,6 +26,7 @@ provider:
 
   environment:
     TRAINING_TYPES_TABLE: TrainingTypes-${sls:stage}
+    TRAININGS_TABLE: Trainings-${sls:stage}
 
   httpApi:
     cors: true
@@ -92,6 +93,28 @@ functions:
       - httpApi:
           path: /trainings/types
           method: get
+
+  addTraining:
+    handler: training/addTraining.handler
+    events:
+      - httpApi:
+          path: /trainings
+          method: post
+
+  getAllTrainings:
+    handler: training/getAllTrainings.handler
+    events:
+      - httpApi:
+          path: /trainings
+          method: get
+
+  searchTrainings:
+    handler: training/searchTrainings.handler
+    events:
+      - httpApi:
+          path: /trainings/search
+          method: get
+
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
@@ -145,6 +168,35 @@ resources:
         KeySchema:
           - AttributeName: id
             KeyType: HASH
+
+    TrainingsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TRAININGS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: studentId
+            AttributeType: S
+          - AttributeName: trainerId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: StudentIdIndex
+            KeySchema:
+              - AttributeName: studentId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: TrainerIdIndex
+            KeySchema:
+              - AttributeName: trainerId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
 # you can add CloudFormation resource templates here
 #resources:
 #  Resources:
