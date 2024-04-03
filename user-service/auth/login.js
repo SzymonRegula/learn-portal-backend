@@ -55,10 +55,8 @@ export const handler = async (event) => {
 
     const payload = {
       userId: user.id,
-      username: user.username,
       role: user.role,
-      photo: user.photo,
-      email: user.email,
+      roleId: user.roleId,
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
