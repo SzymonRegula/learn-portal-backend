@@ -1,0 +1,235 @@
+service: user-service
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+
+  environment:
+    JWT_SECRET: ${ssm:/aws/reference/secretsmanager/learn-portal/jwt-secret}
+    USERS_TABLE: Users-${sls:stage}
+    STUDENTS_TABLE: Students-${sls:stage}
+    TRAINERS_TABLE: Trainers-${sls:stage}
+    SPECIALIZATIONS_TABLE: Specializations-${sls:stage}
+
+  httpApi:
+    cors: true
+    authorizers:
+      userAuthorizer:
+        type: request
+        functionName: userAuthorizer
+      studentAuthorizer:
+        type: request
+        functionName: studentAuthorizer
+      trainerAuthorizer:
+        type: request
+        functionName: trainerAuthorizer
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
+          Resource:
+            - "arn:aws:dynamodb:${aws:region}:*:table/*"
+
+  stage: ${opt:stage, 'dev'}
+  region: eu-north-1
+
+package:
+  include:
+    - helpers/**
+
+functions:
+  userAuthorizer:
+    handler: auth/authorizers.userAuthorizer
+  studentAuthorizer:
+    handler: auth/authorizers.studentAuthorizer
+  trainerAuthorizer:
+    handler: auth/authorizers.trainerAuthorizer
+
+  register:
+    handler: auth/register.handler
+    events:
+      - httpApi:
+          path: /auth/register
+          method: post
+
+  login:
+    handler: auth/login.handler
+    events:
+      - httpApi:
+          path: /auth/login
+          method: post
+
+  getMe:
+    handler: user/getMe.handler
+    events:
+      - httpApi:
+          path: /users/me
+          method: get
+          authorizer:
+            name: userAuthorizer
+
+  deleteMe:
+    handler: user/deleteMe.handler
+    events:
+      - httpApi:
+          path: /users/me
+          method: delete
+          authorizer:
+            name: userAuthorizer
+
+  updateMe:
+    handler: user/updateMe.handler
+    events:
+      - httpApi:
+          path: /users/me
+          method: patch
+          authorizer:
+            name: userAuthorizer
+
+  uploadPhoto:
+    handler: user/uploadPhoto.handler
+    events:
+      - httpApi:
+          path: /users/upload-photo
+          method: post
+          authorizer:
+            name: userAuthorizer
+
+  updatePassword:
+    handler: user/updatePassword.handler
+    events:
+      - httpApi:
+          path: /users/update-password
+          method: put
+          authorizer:
+            name: userAuthorizer
+
+  getActiveTrainers:
+    handler: user/getActiveTrainers.handler
+    events:
+      - httpApi:
+          path: /users/trainers
+          method: get
+          authorizer:
+            name: studentAuthorizer
+
+  addTrainer:
+    handler: user/addTrainer.handler
+    events:
+      - httpApi:
+          path: /users/trainers
+          method: post
+          authorizer:
+            name: studentAuthorizer
+
+  getMyStudents:
+    handler: user/getMyStudents.handler
+    events:
+      - httpApi:
+          path: /users/students
+          method: get
+          authorizer:
+            name: trainerAuthorizer
+
+  getAllSpecializations:
+    handler: user/getAllSpecializations.handler
+    events:
+      - httpApi:
+          path: /users/trainers/specializations
+          method: get
+
+resources:
+  Resources:
+    UsersTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        TableName: ${self:provider.environment.USERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: username
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UsernameIndex
+            KeySchema:
+              - AttributeName: username
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: EmailIndex
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    StudentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.STUDENTS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UserIdIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    TrainersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TRAINERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UserIdIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    SpecializationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.SPECIALIZATIONS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
