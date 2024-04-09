@@ -32,8 +32,6 @@ export const handler = async (event) => {
   try {
     const data = event.queryStringParameters;
 
-    console.log(data);
-
     const { error } = schema.validate(data);
 
     if (error) {
